@@ -1,0 +1,36 @@
+# === Python basics ===
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.so
+*.egg-info/
+dist/
+build/
+
+# === Virtual environment ===
+venv/
+env/
+.venv/
+ENV/
+
+# === IDE/Editor ===
+.vscode/
+.idea/
+*.swp
+
+# === Jupyter/Streamlit cache ===
+.ipynb_checkpoints/
+.streamlit/
+
+# === OS generated ===
+.DS_Store
+Thumbs.db
+
+# === Credentials / Secrets ===
+# Google Service Account JSON
+*.json
+
+# kalau mau lebih spesifik (biar credential tetap aman)
+proven-mystery-471102-k6-0d7bdda0bcd4.json

@@ -3,7 +3,7 @@ import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
-
+from streamlit_extras.metric_cards import style_metric_cards
 
 # ------------------------
 # SETUP PAGE (harus paling atas)
@@ -14,16 +14,22 @@ st.set_page_config(page_title="Dashboard BKPSDM", layout="wide")
 if "page" not in st.session_state:
     st.session_state["page"] = "dashboard"  # default halaman
 
-# --- Auth ke Google Sheet ---
-# scope = ["https://spreadsheets.google.com/feeds",
-#          "https://www.googleapis.com/auth/drive"]
+# --- Auth ke Google Sheet Lokal ---
+scope = [
+    "https://spreadsheets.google.com/feeds",
+    "https://www.googleapis.com/auth/drive"
+]
 
-# creds = ServiceAccountCredentials.from_json_keyfile_name(
-#     r"C:/Users/MyBook Hype AMD/Videos/Program Python/Dashboard Arus Kas/proven-mystery-471102-k6-0d7bdda0bcd4.json",
-#     scope
+# pakai from_service_account_file (bukan from_json_keyfile_name)
+# creds = Credentials.from_service_account_file(
+#     r"C:/Users/MyBook Hype AMD/Videos/Dashboard Arus Kas/proven-mystery-471102-k6-0d7bdda0bcd4.json",
+#     scopes=scope
 # )
+
 # client = gspread.authorize(creds)
 
+
+# Gunakan st.secrets untuk menyimpan kredensial
 scope = ["https://spreadsheets.google.com/feeds",
          "https://www.googleapis.com/auth/drive"]
 
@@ -122,16 +128,44 @@ if st.session_state["page"] == "dashboard":
 
     # --- Statistik ---
     st.subheader("📊 Statistik")
+
+    # Contoh data
+    # df = pd.DataFrame({"UMK":[1000000, 2000000], "SPJ":[500000, 1200000]})
     total_umk = df["UMK"].sum()
     total_spj = df["SPJ"].sum()
     sisa_akhir = total_umk - total_spj
     realisasi = (total_spj / total_umk * 100) if total_umk > 0 else 0
 
     c1, c2, c3, c4 = st.columns(4)
+
     c1.metric("💰 Total UMK", f"Rp{total_umk:,.0f}")
     c2.metric("📑 Total SPJ", f"Rp{total_spj:,.0f}")
     c3.metric("📊 Realisasi SPJ", f"{realisasi:.1f}%")
     c4.metric("🏦 Sisa Akhir", f"Rp{sisa_akhir:,.0f}")
+
+    # Apply styling
+    style_metric_cards(
+        background_color="#FFFFFF",
+        border_left_color="#4F46E5",
+        border_size_px=4,
+        border_radius_px=12,
+        box_shadow=True,
+    )
+
+    # Inject CSS biar font jadi hitam
+    st.markdown(
+        """
+        <style>
+        [data-testid="stMetricValue"] {
+            color: black !important;
+        }
+        [data-testid="stMetricLabel"] {
+            color: black !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
     # --- Data Table ---
     st.subheader("📋 Data Detail")
