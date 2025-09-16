@@ -14,15 +14,21 @@ if "page" not in st.session_state:
     st.session_state["page"] = "dashboard"  # default halaman
 
 # --- Auth ke Google Sheet ---
-scope = ["https://spreadsheets.google.com/feeds",
-         "https://www.googleapis.com/auth/drive"]
+# scope = ["https://spreadsheets.google.com/feeds",
+#          "https://www.googleapis.com/auth/drive"]
 
-creds = ServiceAccountCredentials.from_json_keyfile_name(
-    r"C:/Users/MyBook Hype AMD/Videos/Program Python/Dashboard Arus Kas/proven-mystery-471102-k6-0d7bdda0bcd4.json",
-    scope
+# creds = ServiceAccountCredentials.from_json_keyfile_name(
+#     r"C:/Users/MyBook Hype AMD/Videos/Program Python/Dashboard Arus Kas/proven-mystery-471102-k6-0d7bdda0bcd4.json",
+#     scope
+# )
+# client = gspread.authorize(creds)
+
+
+creds = ServiceAccountCredentials.from_service_account_info(
+    st.secrets["google_credentials"],
+    scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 )
 client = gspread.authorize(creds)
-
 # ------------------------
 # HALAMAN DASHBOARD
 # ------------------------
