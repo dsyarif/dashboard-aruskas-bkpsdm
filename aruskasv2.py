@@ -34,7 +34,7 @@ client = gspread.authorize(creds)
 # HALAMAN DASHBOARD
 # ------------------------
 if st.session_state["page"] == "dashboard":
-    st.title("📊 Dashboard KASVA 1.0 - Aplikasi Cash Flow BKPSDM")
+    st.title("📊 Dashboard Aplikasi Cash Flow BKPSDM")
 
     # Tombol ke halaman Tenggang Waktu
     if st.button("➡️ Halaman Tenggang Waktu"):
