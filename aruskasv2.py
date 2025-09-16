@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 from datetime import datetime
+
 
 # ------------------------
 # SETUP PAGE (harus paling atas)
@@ -23,12 +24,12 @@ if "page" not in st.session_state:
 # )
 # client = gspread.authorize(creds)
 
+scope = ["https://spreadsheets.google.com/feeds",
+         "https://www.googleapis.com/auth/drive"]
 
-creds = ServiceAccountCredentials.from_service_account_info(
-    st.secrets["google_credentials"],
-    scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-)
+creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
 client = gspread.authorize(creds)
+
 # ------------------------
 # HALAMAN DASHBOARD
 # ------------------------
