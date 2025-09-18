@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import gspread
+import gspread, os, json
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 from streamlit_extras.metric_cards import style_metric_cards
@@ -15,26 +15,37 @@ if "page" not in st.session_state:
     st.session_state["page"] = "dashboard"  # default halaman
 
 # --- Auth ke Google Sheet Lokal ---
-scope = [
-    "https://spreadsheets.google.com/feeds",
-    "https://www.googleapis.com/auth/drive"
-]
-
-# pakai from_service_account_file (bukan from_json_keyfile_name)
-# creds = Credentials.from_service_account_file(
-#     r"C:/Users/MyBook Hype AMD/Videos/Dashboard Arus Kas/proven-mystery-471102-k6-0d7bdda0bcd4.json",
-#     scopes=scope
-# )
-
-# client = gspread.authorize(creds)
-
-
-# Gunakan st.secrets untuk menyimpan kredensial
-scope = ["https://spreadsheets.google.com/feeds",
+scope = ["https://www.googleapis.com/auth/spreadsheets",
          "https://www.googleapis.com/auth/drive"]
 
-creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-client = gspread.authorize(creds)
+creds = None
+
+RUN_LOCAL = True  # ubah ke False pas deploy ke cloud
+
+if not RUN_LOCAL and st.secrets.get("gcp_service_account"):
+    creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+elif "GCP_SERVICE_ACCOUNT" in os.environ:
+    creds_dict = json.loads(os.environ["GCP_SERVICE_ACCOUNT"])
+    creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+else:
+    creds = Credentials.from_service_account_file(
+        r"C:/Users/MyBook Hype AMD/Videos/Dashboard Arus Kas/proven-mystery-471102-k6-0d7bdda0bcd4.json",
+        scopes=scope
+    )
+
+
+# --- Gspread client ---
+if creds:
+    client = gspread.authorize(creds)
+else:
+    st.stop()
+
+# Gunakan st.secrets untuk menyimpan kredensial
+# scope = ["https://spreadsheets.google.com/feeds",
+#          "https://www.googleapis.com/auth/drive"]
+
+# creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+# client = gspread.authorize(creds)
 
 # ------------------------
 # HALAMAN DASHBOARD
@@ -126,22 +137,23 @@ if st.session_state["page"] == "dashboard":
         sisa.append(saldo)
     df["Sisa Saldo"] = sisa
 
+  # fungsi helper rupiah
+    def format_rupiah(x):
+        return f"Rp{int(x):,}".replace(",", ".")
+
     # --- Statistik ---
     st.subheader("📊 Statistik")
-
-    # Contoh data
-    # df = pd.DataFrame({"UMK":[1000000, 2000000], "SPJ":[500000, 1200000]})
     total_umk = df["UMK"].sum()
     total_spj = df["SPJ"].sum()
     sisa_akhir = total_umk - total_spj
     realisasi = (total_spj / total_umk * 100) if total_umk > 0 else 0
 
     c1, c2, c3, c4 = st.columns(4)
-
-    c1.metric("💰 Total UMK", f"Rp{total_umk:,.0f}")
-    c2.metric("📑 Total SPJ", f"Rp{total_spj:,.0f}")
+    c1.metric("💰 Total UMK", format_rupiah(total_umk))
+    c2.metric("📑 Total SPJ", format_rupiah(total_spj))
     c3.metric("📊 Realisasi SPJ", f"{realisasi:.1f}%")
-    c4.metric("🏦 Sisa Akhir", f"Rp{sisa_akhir:,.0f}")
+    c4.metric("🏦 Sisa Saldo", format_rupiah(sisa_akhir))
+
 
     # Apply styling
     style_metric_cards(
@@ -180,7 +192,9 @@ if st.session_state["page"] == "dashboard":
 
         for col in ["UMK", "SPJ", "Sisa Saldo"]:
             if col in df_tampil.columns:
-                df_tampil[col] = df_tampil[col].apply(lambda x: f"Rp{x:,.0f}")
+                df_tampil[col] = df_tampil[col].apply(
+                    lambda x: f"Rp{int(x):,}".replace(",", ".")
+                )
 
         st.dataframe(df_tampil, use_container_width=True)
     else:
