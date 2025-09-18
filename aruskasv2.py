@@ -4,6 +4,7 @@ import gspread, os, json
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 from streamlit_extras.metric_cards import style_metric_cards
+import altair as alt
 
 # ------------------------
 # SETUP PAGE (harus paling atas)
@@ -193,10 +194,37 @@ if st.session_state["page"] == "dashboard":
 
     # --- Grafik ---
     if not df.empty:
-        st.subheader("📊 Grafik UMK, SPJ, & Sisa Saldo per Kategori")
+        st.subheader("📊 Grafik UMK & SPJ per Kategori")
         grafik = df.groupby("Kategori")[["UMK", "SPJ"]].sum()
-        grafik["Sisa Saldo"] = grafik["UMK"] - grafik["SPJ"]
-        st.bar_chart(grafik)
+        # grafik["Sisa Saldo"] = grafik["UMK"] - grafik["SPJ"]
+        grafik_reset = grafik.reset_index().melt("Kategori", var_name="Jenis", value_name="Jumlah")
+
+        bar = (
+            alt.Chart(grafik_reset)
+            .mark_bar()
+            .encode(
+                x=alt.X("Kategori:N", title="Kategori"),
+                y=alt.Y("Jumlah:Q", title="Jumlah (Rp)"),
+                color="Jenis:N",
+                xOffset="Jenis:N"
+            )
+        )
+        text = (
+            alt.Chart(grafik_reset)
+            .mark_text(dy=-5, size=12)  # dy=-5 biar teksnya di atas batang
+            .encode(
+                x=alt.X("Kategori:N"),
+                y=alt.Y("Jumlah:Q"),
+                text=alt.Text("Jumlah:Q", format=",.0f"),  # format angka ribuan
+                xOffset="Jenis:N",
+                # color=alt.value("black")  # teks warna hitam biar jelas
+            )
+        )
+
+        chart = bar + text
+        st.altair_chart(chart, use_container_width=True)
+        # st.altair_chart(chart, use_container_width=True)
+
 
 # ------------------------
 # HALAMAN TENGGANG WAKTU

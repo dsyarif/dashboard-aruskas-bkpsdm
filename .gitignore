@@ -22,7 +22,7 @@ ENV/
 
 # === Jupyter/Streamlit cache ===
 .ipynb_checkpoints/
-# .streamlit/
+.streamlit/
 
 # === OS generated ===
 .DS_Store
