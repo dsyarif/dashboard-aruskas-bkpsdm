@@ -17,29 +17,20 @@ if "page" not in st.session_state:
 # --- Auth ke Google Sheet Lokal ---
 scope = ["https://www.googleapis.com/auth/spreadsheets",
          "https://www.googleapis.com/auth/drive"]
-
 creds = None
-
-RUN_LOCAL = True  # ubah ke False pas deploy ke cloud
-
-if not RUN_LOCAL and st.secrets.get("gcp_service_account"):
-    creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
-elif "GCP_SERVICE_ACCOUNT" in os.environ:
-    creds_dict = json.loads(os.environ["GCP_SERVICE_ACCOUNT"])
-    creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
-else:
+try:
+    # --- Cloud (pakai Streamlit Secrets) ---
+    creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"], scopes=scope
+    )
+except Exception:
+    # --- Lokal (pakai file json) ---
     creds = Credentials.from_service_account_file(
         r"C:/Users/MyBook Hype AMD/Videos/Dashboard Arus Kas/proven-mystery-471102-k6-0d7bdda0bcd4.json",
         scopes=scope
     )
 
-
-# --- Gspread client ---
-if creds:
-    client = gspread.authorize(creds)
-else:
-    st.stop()
-
+client = gspread.authorize(creds)
 # Gunakan st.secrets untuk menyimpan kredensial
 # scope = ["https://spreadsheets.google.com/feeds",
 #          "https://www.googleapis.com/auth/drive"]
