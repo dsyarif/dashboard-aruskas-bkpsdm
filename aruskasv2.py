@@ -46,7 +46,7 @@ if st.session_state["page"] == "dashboard":
     st.title("📊 Dashboard Aplikasi Cash Flow BKPSDM")
 
     # Tombol ke halaman Tenggang Waktu
-    if st.button("➡️ Halaman Tenggang Waktu"):
+    if st.button("➡️ Halaman Tenggat Waktu"):
         st.session_state["page"] = "tenggang"
         st.rerun()
 
@@ -230,7 +230,7 @@ if st.session_state["page"] == "dashboard":
 # HALAMAN TENGGANG WAKTU
 # ------------------------
 elif st.session_state["page"] == "tenggang":
-    st.title("📅 Halaman Tenggang Waktu")
+    st.title("📅 Halaman Tenggat Waktu")
 
     # Tombol kembali ke Dashboard
     if st.button("⬅️ Kembali ke Dashboard"):
@@ -307,7 +307,7 @@ elif st.session_state["page"] == "tenggang":
     loader.markdown(loader_html, unsafe_allow_html=True)
 
     # --- Load Data dari sheet Tenggang Waktu ---
-    sheet_tw = client.open("KASVA 1.0 - Aplikasi Cash Flow BKPSDM").worksheet("Tenggang Waktu")
+    sheet_tw = client.open("KASVA 1.0 - Aplikasi Cash Flow BKPSDM").worksheet("Tenggat Waktu")
     data_tw = sheet_tw.get_all_records()
     df_tw = pd.DataFrame(data_tw)
 
@@ -320,7 +320,7 @@ elif st.session_state["page"] == "tenggang":
             if col in df_tw.columns:
                 df_tw = df_tw.drop(columns=[col])
 
-        st.subheader("📋 Data Tenggang Waktu")
+        st.subheader("📋 Data Tenggat Waktu")
 
         # Fungsi pewarnaan Sisa Hari
         def warna_cell(sisa):
@@ -379,6 +379,6 @@ elif st.session_state["page"] == "tenggang":
         st.markdown(html, unsafe_allow_html=True)
 
     else:
-        st.info("⚠️ Tidak ada data tenggang waktu.")
+        st.info("⚠️ Tidak ada data tenggat waktu.")
 
 
