@@ -43,39 +43,7 @@ client = gspread.authorize(creds)
 # HALAMAN DASHBOARD
 # ------------------------
 if st.session_state["page"] == "dashboard":
-    theme_base = st.get_option("theme.base")
-
-    # sesuaikan warna berdasarkan tema
-    if theme_base == "dark":
-        title_color = "#E5E7EB"  # putih keabu
-        accent_color = "#818CF8"  # ungu lembut
-        subtitle_color = "#9CA3AF"
-    else:
-        title_color = "#E5E7EB"  # abu tua
-        accent_color = "#4F46E5"  # ungu utama
-        subtitle_color = "#6B7280"
-
-    # tampilkan title
-    st.markdown(
-        f"""
-        <h1 style='
-            font-size:38px; 
-            font-weight:800; 
-            color:{title_color}; 
-            margin-bottom:5px;
-        '>
-            Dashboard <span style='color:{accent_color}'>KASVA</span> (Kas Virtual)
-        </h1>
-        <h4 style='
-            margin-top:-35px; 
-            color:{subtitle_color};
-            font-weight:500;
-        '>
-            BKPSDM Kota Pekalongan
-        </h4>
-        """,
-        unsafe_allow_html=True
-    )
+    st.title("📊 Dashboard Aplikasi Cash Flow BKPSDM")
 
     # Tombol ke halaman Tenggang Waktu
     if st.button("➡️ Halaman Tenggat Waktu"):
@@ -105,76 +73,52 @@ if st.session_state["page"] == "dashboard":
 
     # --- Filter ---
     st.subheader("🔍 Filter Data")
-
     df["Tahun"] = df["Tanggal"].dt.year
     df["Kategori"] = df["Kategori"].replace("", pd.NA)
     df["Kasir"] = df["Kasir"].replace("", pd.NA)
 
-    # Bikin 3 kolom
-    c1, c2, c3 = st.columns(3)
-
+    c1, c2 = st.columns(2)
     with c1:
         tahun_list = sorted(df.loc[df["Tahun"].notna(), "Tahun"].astype(int).unique().tolist())
         tahun = st.selectbox("📅 Tahun", options=["Semua"] + tahun_list)
-
     with c2:
         kategori_list = sorted(df["Kategori"].dropna().unique().tolist())
         kategori = st.selectbox("📂 Kategori", options=["Semua"] + kategori_list)
 
-    # Filter sementara untuk ambil daftar kasir sesuai kategori
-    df_temp = df.copy()
+    df_filtered = df.copy()
     if tahun != "Semua":
-        df_temp = df_temp[df_temp["Tahun"] == tahun]
+        df_filtered = df_filtered[df_filtered["Tahun"] == tahun]
     if kategori != "Semua":
-        df_temp = df_temp[df_temp["Kategori"] == kategori]
+        df_filtered = df_filtered[df_filtered["Kategori"] == kategori]
 
-    with c3:
-        kasir_list = sorted(df_temp["Kasir"].dropna().unique().tolist())
-        kasir = st.selectbox("👤 Kasir", options=["Semua"] + kasir_list)
-
-    # Filter utama
-    df_filtered = df_temp.copy()
+    kasir_list = sorted(df_filtered["Kasir"].dropna().unique().tolist())
+    kasir = st.selectbox("👤 Kasir", options=["Semua"] + kasir_list)
     if kasir != "Semua":
         df_filtered = df_filtered[df_filtered["Kasir"] == kasir]
 
     df = df_filtered.copy()
 
-
     # Filter rentang tanggal
-    # if df["Tanggal"].notna().any():
-    #     min_tgl = df["Tanggal"].min().date()
-    #     max_tgl = df["Tanggal"].max().date()
-    # else:
-    #     today = datetime.today().date()
-    #     min_tgl, max_tgl = today, today
-
-    # tgl_range = st.date_input(
-    #     "⏳ Rentang Tanggal:",
-    #     value=[min_tgl, max_tgl],
-    #     format="DD-MM-YYYY"
-    # )
-    # if isinstance(tgl_range, (list, tuple)) and len(tgl_range) == 2:
-    #     tgl_awal, tgl_akhir = tgl_range
-    # else:
-    #     tgl_awal, tgl_akhir = min_tgl, max_tgl
-
-    # tgl_awal = pd.to_datetime(tgl_awal)
-    # tgl_akhir = pd.to_datetime(tgl_akhir)
-    # df = df[(df["Tanggal"] >= tgl_awal) & (df["Tanggal"] <= tgl_akhir)]
-
-    # --- ✅ FITUR 1: Transaksi Terakhir ---
-    st.markdown("### 🧾 Transaksi Terakhir")
-    if not df.empty:
-        last_tx = df.sort_values("Tanggal", ascending=False).head(1)[
-            ["Tanggal", "Kategori", "Kasir", "Uraian", "UMK", "SPJ"]
-        ].copy()
-        last_tx["Tanggal"] = last_tx["Tanggal"].dt.strftime("%d-%m-%Y")
-        for col in ["UMK", "SPJ"]:
-            last_tx[col] = last_tx[col].apply(lambda x: f"Rp{int(x):,}".replace(",", "."))
-        st.dataframe(last_tx, use_container_width=True, hide_index=True)
+    if df["Tanggal"].notna().any():
+        min_tgl = df["Tanggal"].min().date()
+        max_tgl = df["Tanggal"].max().date()
     else:
-        st.info("Belum ada transaksi yang sesuai filter.")
+        today = datetime.today().date()
+        min_tgl, max_tgl = today, today
 
+    tgl_range = st.date_input(
+        "⏳ Rentang Tanggal:",
+        value=[min_tgl, max_tgl],
+        format="DD-MM-YYYY"
+    )
+    if isinstance(tgl_range, (list, tuple)) and len(tgl_range) == 2:
+        tgl_awal, tgl_akhir = tgl_range
+    else:
+        tgl_awal, tgl_akhir = min_tgl, max_tgl
+
+    tgl_awal = pd.to_datetime(tgl_awal)
+    tgl_akhir = pd.to_datetime(tgl_akhir)
+    df = df[(df["Tanggal"] >= tgl_awal) & (df["Tanggal"] <= tgl_akhir)]
 
     # --- Hitung Sisa Saldo ---
     df = df.sort_values("Tanggal").reset_index(drop=True)
@@ -206,7 +150,7 @@ if st.session_state["page"] == "dashboard":
     # Apply styling
     style_metric_cards(
         background_color="#FFFFFF",
-        border_left_color="#FC5185",
+        border_left_color="#4F46E5",
         border_size_px=4,
         border_radius_px=12,
         box_shadow=True,
@@ -248,120 +192,39 @@ if st.session_state["page"] == "dashboard":
     else:
         st.warning("⚠️ Tidak ada data sesuai filter.")
 
-    # --- ✅ FITUR 2: Grafik SPJ per Uraian ---
-    if not df.empty:
-        st.subheader("📈 Grafik SPJ per Uraian")
-
-        # 🔍 Filter: hanya ambil baris dengan SPJ > 0
-        df_spj = df[df["SPJ"].fillna(0) > 0]
-
-        if not df_spj.empty:
-            # 🧮 Kelompokkan per Uraian dan jumlahkan SPJ
-            spj_uraian = df_spj.groupby("Uraian")["SPJ"].sum().reset_index()
-
-            # 🅰️ Urutkan berdasarkan nama Uraian (A-Z)
-            spj_uraian = spj_uraian.sort_values("Uraian", ascending=True)
-
-            # 🎨 Chart batang utama
-            bars = (
-                alt.Chart(spj_uraian)
-                .mark_bar(color="#FC5185")
-                .encode(
-                    x=alt.X("Uraian:N", sort=None, title="Uraian"),
-                    y=alt.Y("SPJ:Q", title="Total SPJ (Rp)"),
-                    tooltip=[
-                        alt.Tooltip("Uraian", title="Uraian"),
-                        alt.Tooltip("SPJ", title="Total SPJ", format=",")
-                    ]
-                )
-            )
-
-            # 💬 Tambahkan label nominal di atas batang
-            text = (
-                alt.Chart(spj_uraian)
-                .mark_text(
-                    align="center",
-                    baseline="bottom",
-                    dy=-5,  # jarak teks dari batang
-                    color="#111827",
-                    fontWeight="bold"
-                )
-                .encode(
-                    x=alt.X("Uraian:N", sort=None),
-                    y=alt.Y("SPJ:Q"),
-                    text=alt.Text("SPJ:Q", format=",")
-                )
-            )
-
-            # Gabungkan chart batang + label
-            chart_spj = (bars + text).properties(height=400)
-
-            st.altair_chart(chart_spj, use_container_width=True)
-        else:
-            st.info("📭 Belum ada transaksi dengan nilai SPJ > 0.")
-
-    
     # --- Grafik ---
     if not df.empty:
         st.subheader("📊 Grafik UMK & SPJ per Kategori")
-
-        # Kelompokkan data
         grafik = df.groupby("Kategori")[["UMK", "SPJ"]].sum()
+        # grafik["Sisa Saldo"] = grafik["UMK"] - grafik["SPJ"]
         grafik_reset = grafik.reset_index().melt("Kategori", var_name="Jenis", value_name="Jumlah")
 
-        # 🎨 Tentukan warna custom per jenis data
-        warna_custom = alt.Scale(
-            domain=["UMK", "SPJ"],  # nama-nama kategori di kolom "Jenis"
-            range=["#FC5185", "#3FC1C9"]  # warna yang kamu mau (bisa diganti)
-        )
-
-        # --- Chart Batang ---
         bar = (
             alt.Chart(grafik_reset)
             .mark_bar()
             .encode(
                 x=alt.X("Kategori:N", title="Kategori"),
                 y=alt.Y("Jumlah:Q", title="Jumlah (Rp)"),
-                color=alt.Color("Jenis:N", scale=warna_custom, title="Jenis"),
+                color="Jenis:N",
                 xOffset="Jenis:N"
             )
         )
-
-        # --- Label Nominal ---
         text = (
             alt.Chart(grafik_reset)
-            .mark_text(
-                align="center",
-                baseline="bottom",
-                dy=-5,
-                color="#111827",
-                fontWeight="bold"
-            )
+            .mark_text(dy=-5, size=12)  # dy=-5 biar teksnya di atas batang
             .encode(
                 x=alt.X("Kategori:N"),
                 y=alt.Y("Jumlah:Q"),
-                text=alt.Text("Jumlah:Q", format=",.0f"),
-                xOffset="Jenis:N"
+                text=alt.Text("Jumlah:Q", format=",.0f"),  # format angka ribuan
+                xOffset="Jenis:N",
+                # color=alt.value("black")  # teks warna hitam biar jelas
             )
         )
 
-        # Gabung bar + teks
-        chart = (bar + text).properties(height=400)
+        chart = bar + text
         st.altair_chart(chart, use_container_width=True)
+        # st.altair_chart(chart, use_container_width=True)
 
-    # --- ✅ FITUR 3: Tombol Download / Export Excel ---
-    st.subheader("📥 Download / Export Data")
-    if not df.empty:
-        csv = df_tampil.to_csv(index=False).encode("utf-8-sig")
-        st.download_button(
-            label="⬇️ Download Data (.CSV)",
-            data=csv,
-            file_name=f"Kasva_Export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-            mime="text/csv",
-        )
-    else:
-        st.info("Tidak ada data untuk diunduh.")
-  
 
 # ------------------------
 # HALAMAN TENGGANG WAKTU
