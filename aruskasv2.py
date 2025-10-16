@@ -47,7 +47,7 @@ if st.session_state["page"] == "dashboard":
 
     # sesuaikan warna berdasarkan tema
     if theme_base == "dark":
-        title_color = "#E5E7EB"  # putih keabu
+        title_color = "#565D6B"  # putih keabu
         accent_color = "#818CF8"  # ungu lembut
         subtitle_color = "#9CA3AF"
     else:
@@ -77,11 +77,22 @@ if st.session_state["page"] == "dashboard":
         unsafe_allow_html=True
     )
 
-    # Tombol ke halaman Tenggang Waktu
-    if st.button("➡️ Halaman Tenggat Waktu"):
+    # Bikin kolom kosong buat dorong tombol ke kanan
+    col1, col2 = st.columns([10, 2])
+
+    with col1:
+        panduan = st.button("📘 Panduan Penggunaan")
+    with col2:
+        tenggat = st.button("➡️ Halaman Tenggat Waktu")
+
+
+    # Aksi tombol
+    if panduan:
+        st.markdown("[Klik di sini untuk membuka Panduan](https://drive.google.com/file/d/1b_rnjxVg_1bm2SDAAgcS5bP8CUAK_vDl/view)", unsafe_allow_html=True)
+
+    if tenggat:
         st.session_state["page"] = "tenggang"
         st.rerun()
-
     # --- Load Data dari sheet Data ---
     sheet = client.open("KASVA 1.0 - Aplikasi Cash Flow BKPSDM").worksheet("Data")
     data = sheet.get_all_records()
