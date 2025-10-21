@@ -32,6 +32,8 @@ except Exception:
     )
 
 client = gspread.authorize(creds)
+sheet_data = client.open("KASVA 1.0 - Aplikasi Cash Flow BKPSDM").worksheet("Data")
+sheet_kasir = client.open("KASVA 1.0 - Aplikasi Cash Flow BKPSDM").worksheet("Data Kasir")
 # Gunakan st.secrets untuk menyimpan kredensial
 # scope = ["https://spreadsheets.google.com/feeds",
 #          "https://www.googleapis.com/auth/drive"]
@@ -39,24 +41,25 @@ client = gspread.authorize(creds)
 # creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
 # client = gspread.authorize(creds)
 
-# ------------------------
-# HALAMAN DASHBOARD
-# ------------------------
-if st.session_state["page"] == "dashboard":
-    theme_base = st.get_option("theme.base")
+# ========================
+# NAVIGASI UTAMA (HORIZONTAL MENU)
+# ========================
+
+# Fungsi buat tombol aktif
+theme_base = st.get_option("theme.base")
 
     # sesuaikan warna berdasarkan tema
-    if theme_base == "dark":
+if theme_base == "dark":
         title_color = "#565D6B"  # putih keabu
         accent_color = "#818CF8"  # ungu lembut
         subtitle_color = "#9CA3AF"
-    else:
+else:
         title_color = "#E5E7EB"  # abu tua
         accent_color = "#4F46E5"  # ungu utama
         subtitle_color = "#6B7280"
 
     # tampilkan title
-    st.markdown(
+st.markdown(
         f"""
         <h1 style='
             font-size:38px; 
@@ -76,23 +79,202 @@ if st.session_state["page"] == "dashboard":
         """,
         unsafe_allow_html=True
     )
+if "logged_in" in st.session_state and st.session_state["logged_in"]: 
+    st.markdown( f"<div font-weight:600; style='margin-bottom:15px;'>Selamat Datang, <b>{st.session_state['user'].title()}</b>", unsafe_allow_html=True )
+# ========================
+# NAVIGASI UTAMA (HORIZONTAL MENU)
+# ========================
 
-    # Bikin kolom kosong buat dorong tombol ke kanan
-    col1, col2 = st.columns([10, 2])
+# Fungsi buat tombol aktif
+def nav_button(label, page_name, emoji=""):
+    is_active = st.session_state["page"] == page_name
+    style = (
+        "background-color:#4F46E5; color:white; font-weight:600; border:none; border-radius:8px; padding:8px 16px;"
+        if is_active else
+        "background-color:#F3F4F6; color:#111827; border:none; border-radius:8px; padding:8px 16px;"
+    )
+    clicked = st.button(f"{emoji} {label}", key=page_name, use_container_width=True)
+    st.markdown(
+        f"<style>div[data-testid='stButton'] button#{page_name} {{{style}}}</style>",
+        unsafe_allow_html=True
+    )
+    if clicked:
+        st.session_state["page"] = page_name
+        st.rerun()
 
-    with col1:
-        panduan = st.button("📘 Panduan Penggunaan")
-    with col2:
-        tenggat = st.button("➡️ Halaman Tenggat Waktu")
+# --- Layout Navbar ---
+col_nav1, col_nav2, col_nav3, col_nav4, col_nav5 = st.columns([2, 2, 2, 2, 6])
 
+with col_nav1:
+    if st.button("🏠 Dashboard"):
+        st.session_state["page"] = "dashboard"
+        st.rerun()
 
-    # Aksi tombol
-    if panduan:
-        st.markdown("[Klik di sini untuk membuka Panduan](https://drive.google.com/file/d/1b_rnjxVg_1bm2SDAAgcS5bP8CUAK_vDl/view)", unsafe_allow_html=True)
-
-    if tenggat:
+with col_nav2:
+    if st.button("📅 Tenggat Waktu"):
         st.session_state["page"] = "tenggang"
         st.rerun()
+
+with col_nav3:
+    if st.button("➕ Tambah Data"):
+        if "logged_in" in st.session_state and st.session_state["logged_in"]:
+            st.session_state["page"] = "tambah_data"
+        else:
+            st.session_state["page"] = "login"
+        st.rerun()
+
+with col_nav4:
+    st.link_button("📘 Panduan", "https://drive.google.com/file/d/1b_rnjxVg_1bm2SDAAgcS5bP8CUAK_vDl/view")
+
+with col_nav5:
+    if "logged_in" in st.session_state and st.session_state["logged_in"]:
+        # Tampilan salam + tombol logout
+        col_user, col_btn = st.columns([3, 1])
+        with col_user:
+            st.markdown(
+                f"""
+              
+                """,
+                unsafe_allow_html=True
+            )
+        with col_btn:
+            logout_clicked = st.button("🚪 Logout", use_container_width=True)
+
+        # Aksi Logout
+        if logout_clicked:
+            st.session_state["logged_in"] = False
+            st.session_state["page"] = "dashboard"
+            st.rerun()
+
+# ========================
+# FITUR LOGIN DAN TAMBAH DATA
+# ========================
+
+# --- Daftar user yang diizinkan ---
+USERS = {
+    "yusuf": "123",
+    "dasio": "123"
+}
+
+# --- Halaman login ---
+if st.session_state["page"] == "login":
+    st.title("🔐 Login Tambah Data")
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+    login_btn = st.button("Login")
+
+    if login_btn:
+        if email in USERS and USERS[email] == password:
+            st.session_state["logged_in"] = True
+            st.session_state["user"] = email
+            st.success("Login berhasil! 🎉")
+            st.session_state["page"] = "tambah_data"
+            st.rerun()
+        else:
+            st.error("Email atau password salah!")
+
+# --- Fungsi logout ---
+def logout():
+    if "logged_in" in st.session_state:
+        del st.session_state["logged_in"]
+        del st.session_state["user"]
+        st.session_state["page"] = "dashboard"
+        st.success("Berhasil logout!")
+        st.rerun()
+
+# --- Halaman Tambah Data ---
+if st.session_state["page"] == "tambah_data":
+    # st.title("➕ Tambah Data")
+    st.subheader("➕ Tambah Data")
+    # --- Ambil daftar kasir dari Sheet "Data Kasir" ---
+    kasir_list = sheet_kasir.col_values(2)[1:]  # kolom B, skip header
+
+    # --- Pilih jenis input (UMK atau SPJ) ---
+    jenis_input = st.radio("Pilih Jenis Data yang Akan Dientri:", ["UMK", "SPJ"], horizontal=True)
+
+    # --- Input Form ---
+    tanggal = st.date_input("Tanggal", datetime.today())
+    kategori = st.selectbox("Kategori", ["UMPEG", "RENVAL", "PIP", "SPPD", "MP", "BANGKOM"])
+    kasir = st.selectbox("Kasir", kasir_list)
+    uraian = st.text_input("Uraian")
+
+    umk, spj = 0, 0
+    if jenis_input == "UMK":
+        umk = st.number_input("UMK", min_value=0, step=1000, format="%d")
+    else:
+        spj = st.number_input("SPJ", min_value=0, step=1000, format="%d")
+
+    keterangan = st.text_area("Keterangan", placeholder="Opsional...")
+
+    # --- Auto-update data setiap kategori atau kasir berubah ---
+    # --- Tampilkan 5 Data Terakhir berdasarkan Kategori & Kasir ---
+    data = sheet_data.get_all_values()
+
+    # Ambil kolom B sampai H aja
+    data = [row[1:9] for row in data[1:]]  # [1:8] artinya kolom B–H, [1:] skip header
+    header = sheet_data.row_values(1)[1:9]  # header kolom B–I
+
+    df = pd.DataFrame(data, columns=header)
+
+    if not df.empty and "Kategori" in df.columns and "Kasir" in df.columns:
+        if kategori and kasir:
+            df_filter = df[
+                (df["Kategori"] == kategori) &
+                (df["Kasir"] == kasir)
+            ].tail(5)
+
+            st.subheader(f"📋 5 Transaksi Terakhir ({kategori} - {kasir})")
+            if not df_filter.empty:
+                st.dataframe(df_filter, use_container_width=True)
+            else:
+                st.info("ℹ️ Belum ada data untuk kombinasi kategori dan kasir ini.")
+    else:
+        st.warning("⚠️ Tidak ada data atau kolom tidak lengkap di spreadsheet.")
+
+    # --- Tombol Simpan ---
+    submit = st.button("💾 Simpan Data")
+
+    if submit:
+        # Dapatkan jumlah baris terakhir
+        next_row = len(sheet_data.get_all_values()) + 1
+
+        # Simpan ke kolom B–H
+        sheet_data.update(
+            f"B{next_row}:H{next_row}",
+            [[str(tanggal), kategori, kasir, uraian, umk, spj, keterangan]]
+        )
+
+        st.success("✅ Data berhasil disimpan ke Spreadsheet!")
+
+       
+
+        # Optional biar langsung kelihatan perubahan tanpa reload
+        st.rerun()
+
+
+    # --- Logout ---
+    st.button("🚪 Logout", on_click=lambda: st.session_state.update({"logged_in": False, "page": "login"}))
+
+# ------------------------
+# HALAMAN DASHBOARD
+# ------------------------
+if st.session_state["page"] == "dashboard":
+    
+
+    # Bikin kolom kosong buat dorong tombol ke kanan
+    # col1, col2 = st.columns([10, 2])
+
+    # with col1:
+    #     tenggat = st.button("➡️ Halaman Tenggat Waktu")
+
+    
+    # with col2:
+    #     st.link_button("📘 Panduan", "https://drive.google.com/file/d/1b_rnjxVg_1bm2SDAAgcS5bP8CUAK_vDl/view")
+
+    # if tenggat:
+    #     st.session_state["page"] = "tenggang"
+    #     st.rerun()
+
     # --- Load Data dari sheet Data ---
     sheet = client.open("KASVA 1.0 - Aplikasi Cash Flow BKPSDM").worksheet("Data")
     data = sheet.get_all_records()
@@ -150,28 +332,6 @@ if st.session_state["page"] == "dashboard":
 
     df = df_filtered.copy()
 
-
-    # Filter rentang tanggal
-    # if df["Tanggal"].notna().any():
-    #     min_tgl = df["Tanggal"].min().date()
-    #     max_tgl = df["Tanggal"].max().date()
-    # else:
-    #     today = datetime.today().date()
-    #     min_tgl, max_tgl = today, today
-
-    # tgl_range = st.date_input(
-    #     "⏳ Rentang Tanggal:",
-    #     value=[min_tgl, max_tgl],
-    #     format="DD-MM-YYYY"
-    # )
-    # if isinstance(tgl_range, (list, tuple)) and len(tgl_range) == 2:
-    #     tgl_awal, tgl_akhir = tgl_range
-    # else:
-    #     tgl_awal, tgl_akhir = min_tgl, max_tgl
-
-    # tgl_awal = pd.to_datetime(tgl_awal)
-    # tgl_akhir = pd.to_datetime(tgl_akhir)
-    # df = df[(df["Tanggal"] >= tgl_awal) & (df["Tanggal"] <= tgl_akhir)]
 
     # --- ✅ FITUR 1: Transaksi Terakhir ---
     st.markdown("### 🧾 Transaksi Terakhir")
@@ -238,26 +398,67 @@ if st.session_state["page"] == "dashboard":
         unsafe_allow_html=True
     )
 
-    # --- Data Table ---
+   
     st.subheader("📋 Data Detail")
+
     if not df.empty:
         df_tampil = df.copy()
-        df_tampil["Tanggal"] = df_tampil["Tanggal"].dt.strftime("%d-%m-%Y")
+        df_tampil["Tanggal"] = pd.to_datetime(df_tampil["Tanggal"], errors="coerce")
 
-        cols = ["Tanggal", "Kategori", "Kasir", "Uraian", "UMK", "SPJ"]
-        if kategori != "Semua" or kasir != "Semua":
-            cols.append("Sisa Saldo")
-        df_tampil = df_tampil[cols]
+        df_tampil["Tenggat Waktu"] = pd.NaT
+
+        # --- Hitung Tenggat Waktu berdasarkan UMK dan SPJ ---
+        for (kategori_g, kasir_g), group in df_tampil.groupby(["Kategori", "Kasir"], group_keys=False):
+            group = group.sort_values(["Tanggal"]).reset_index()
+
+            for i, row in group.iterrows():
+                if row["UMK"] > 0:
+                    spj_setelah = group[
+                        (group.index > i) &
+                        (group["SPJ"] > 0) &
+                        (group["Tanggal"] >= row["Tanggal"])
+                    ]
+
+                    if not spj_setelah.empty:
+                        continue
+
+                    spj_sama_tanggal = group[
+                        (group.index < i) &
+                        (group["SPJ"] > 0) &
+                        (group["Tanggal"] == row["Tanggal"])
+                    ]
+
+                    # Tetap hitung tenggat kalau UMK muncul setelah SPJ di tanggal yang sama
+                    tenggat = row["Tanggal"] + pd.Timedelta(days=21)
+                    df_tampil.loc[row["index"], "Tenggat Waktu"] = tenggat
+
+        # Format tanggal dan rupiah
+        df_tampil["Tanggal"] = df_tampil["Tanggal"].dt.strftime("%d/%m/%Y")
+        df_tampil["Tenggat Waktu"] = df_tampil["Tenggat Waktu"].dt.strftime("%A, %d/%m/%Y")
 
         for col in ["UMK", "SPJ", "Sisa Saldo"]:
             if col in df_tampil.columns:
                 df_tampil[col] = df_tampil[col].apply(
-                    lambda x: f"Rp{int(x):,}".replace(",", ".")
+                    lambda x: f"Rp{int(x):,}".replace(",", ".") if pd.notna(x) and x != "" and x != 0 else "-"
                 )
 
+        # --- Tentukan kolom tampil berdasarkan filter ---
+        if kategori == "Semua" and kasir == "Semua":
+            cols = ["Tanggal", "Kategori", "Kasir", "Uraian", "UMK", "SPJ"]
+        else:
+            cols = ["Tanggal", "Kategori", "Kasir", "Uraian", "UMK", "SPJ"]
+            if "Sisa Saldo" in df_tampil.columns:
+                cols.append("Sisa Saldo")
+            if "Tenggat Waktu" in df_tampil.columns:
+                cols.append("Tenggat Waktu")
+
+        df_tampil = df_tampil[cols]
+
         st.dataframe(df_tampil, use_container_width=True)
+
     else:
         st.warning("⚠️ Tidak ada data sesuai filter.")
+
 
     # --- ✅ FITUR 2: Grafik SPJ per Uraian ---
     if not df.empty:
@@ -378,12 +579,12 @@ if st.session_state["page"] == "dashboard":
 # HALAMAN TENGGANG WAKTU
 # ------------------------
 elif st.session_state["page"] == "tenggang":
-    st.title("📅 Halaman Tenggat Waktu")
+    # st.title("📅 Halaman Tenggat Waktu")
 
     # Tombol kembali ke Dashboard
-    if st.button("⬅️ Kembali ke Dashboard"):
-        st.session_state["page"] = "dashboard"
-        st.rerun()
+    # if st.button("⬅️ Kembali ke Dashboard"):
+    #     st.session_state["page"] = "dashboard"
+    #     st.rerun()
 
     # Loader HTML (full screen overlay)
     loader_html = """
