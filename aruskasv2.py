@@ -159,7 +159,7 @@ USERS = {
 # --- Halaman login ---
 if st.session_state["page"] == "login":
     st.title("🔐 Login Tambah Data")
-    email = st.text_input("Email")
+    email = st.text_input("Username")
     password = st.text_input("Password", type="password")
     login_btn = st.button("Login")
 
@@ -171,16 +171,16 @@ if st.session_state["page"] == "login":
             st.session_state["page"] = "tambah_data"
             st.rerun()
         else:
-            st.error("Email atau password salah!")
+            st.error("Username atau password salah!")
 
 # --- Fungsi logout ---
-def logout():
-    if "logged_in" in st.session_state:
-        del st.session_state["logged_in"]
-        del st.session_state["user"]
-        st.session_state["page"] = "dashboard"
-        st.success("Berhasil logout!")
-        st.rerun()
+# def logout():
+#     if "logged_in" in st.session_state:
+#         del st.session_state["logged_in"]
+#         del st.session_state["user"]
+#         st.session_state["page"] = "dashboard"
+#         st.success("Berhasil logout!")
+#         st.rerun()
 
 # --- Halaman Tambah Data ---
 if st.session_state["page"] == "tambah_data":
