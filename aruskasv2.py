@@ -124,7 +124,7 @@ with col_nav3:
         st.rerun()
 
 with col_nav4:
-    st.link_button("📘 Panduan", "https://drive.google.com/file/d/1b_rnjxVg_1bm2SDAAgcS5bP8CUAK_vDl/view")
+    st.link_button("📘 Panduan", "https://www.canva.com/design/DAG2aSa3Pcw/p12_M5MLYKVqYiVZW9De1Q/edit?utm_content=DAG2aSa3Pcw&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton")
 
 with col_nav5:
     if "logged_in" in st.session_state and st.session_state["logged_in"]:
