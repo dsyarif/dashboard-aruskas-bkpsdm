@@ -253,7 +253,7 @@ if st.session_state["page"] == "tambah_data":
 
 
     # --- Logout ---
-    st.button("🚪 Logout", on_click=lambda: st.session_state.update({"logged_in": False, "page": "login"}))
+    # st.button("🚪 Logout", on_click=lambda: st.session_state.update({"logged_in": False, "page": "login"}))
 
 # ------------------------
 # HALAMAN DASHBOARD
