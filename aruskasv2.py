@@ -152,26 +152,30 @@ with col_nav5:
 
 # --- Daftar user yang diizinkan ---
 USERS = {
-    "yusuf": "123",
+    "yusuf": "cakep",
     "dasio": "123"
 }
 
 # --- Halaman login ---
-if st.session_state["page"] == "login":
+if st.session_state.get("page") == "login":
     st.title("🔐 Login Tambah Data")
-    email = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    login_btn = st.button("Login")
 
-    if login_btn:
-        if email in USERS and USERS[email] == password:
-            st.session_state["logged_in"] = True
-            st.session_state["user"] = email
-            st.success("Login berhasil! 🎉")
-            st.session_state["page"] = "tambah_data"
-            st.rerun()
-        else:
-            st.error("Username atau password salah!")
+    # Bungkus semua input login dalam form
+    with st.form("login_form", clear_on_submit=False):
+        email = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        login_btn = st.form_submit_button("Login")
+
+        if login_btn:
+            if email in USERS and USERS[email] == password:
+                st.session_state["logged_in"] = True
+                st.session_state["user"] = email
+                st.session_state["page"] = "tambah_data"
+                st.success("Login berhasil! 🎉")
+                st.rerun()
+            else:
+                st.error("Username atau password salah!")
+
 
 # --- Fungsi logout ---
 # def logout():
@@ -184,35 +188,38 @@ if st.session_state["page"] == "login":
 
 # --- Halaman Tambah Data ---
 if st.session_state["page"] == "tambah_data":
-    # st.title("➕ Tambah Data")
     st.subheader("➕ Tambah Data")
+
     # --- Ambil daftar kasir dari Sheet "Data Kasir" ---
-    kasir_list = sheet_kasir.col_values(2)[1:]  # kolom B, skip header
+    kasir_list = sheet_kasir.col_values(2)[1:]
 
-    # --- Pilih jenis input (UMK atau SPJ) ---
-    jenis_input = st.radio("Pilih Jenis Data yang Akan Dientri:", ["UMK", "SPJ"], horizontal=True)
+    # === FILTER (kategori & kasir) ===
+    col1, col2, col3 = st.columns([3, 3, 2])
+    with col1:
+        kategori = st.selectbox("Kategori", ["UMPEG", "RENVAL", "PIP", "SPPD", "MP", "BANGKOM"], key="kategori_filter")
+    with col2:
+        kasir = st.selectbox("Kasir", kasir_list, key="kasir_filter")
+    with col3:
+        jenis_input = st.radio("Pilih Jenis Data yang Akan Dientri:", ["UMK", "SPJ"], horizontal=True)
 
-    # --- Input Form ---
-    tanggal = st.date_input("Tanggal", datetime.today())
-    kategori = st.selectbox("Kategori", ["UMPEG", "RENVAL", "PIP", "SPPD", "MP", "BANGKOM"])
-    kasir = st.selectbox("Kasir", kasir_list)
-    uraian = st.text_input("Uraian")
+    # === FORM INPUT UTAMA ===
+    with st.form("form_tambah_data"):
+        tanggal = st.date_input("Tanggal", datetime.today())
+        uraian = st.text_input("Uraian")
 
-    umk, spj = 0, 0
-    if jenis_input == "UMK":
-        umk = st.number_input("UMK", min_value=0, step=1000, format="%d")
-    else:
-        spj = st.number_input("SPJ", min_value=0, step=1000, format="%d")
+        umk, spj = 0, 0
+        if jenis_input == "UMK":
+            umk = st.number_input("UMK", min_value=0, step=1000, format="%d")
+        else:
+            spj = st.number_input("SPJ", min_value=0, step=1000, format="%d")
 
-    keterangan = st.text_area("Keterangan", placeholder="Opsional...")
+        keterangan = st.text_area("Keterangan", placeholder="Opsional...")
+        submit = st.form_submit_button("💾 Simpan Data")
 
-    # --- Auto-update data setiap kategori atau kasir berubah ---
-    # --- Tampilkan 5 Data Terakhir berdasarkan Kategori & Kasir ---
+    # === TAMPILKAN 5 DATA TERAKHIR ===
     data = sheet_data.get_all_values()
-
-    # Ambil kolom B sampai H aja
-    data = [row[1:9] for row in data[1:]]  # [1:8] artinya kolom B–H, [1:] skip header
-    header = sheet_data.row_values(1)[1:9]  # header kolom B–I
+    data = [row[1:9] for row in data[1:]]  # kolom B–H
+    header = sheet_data.row_values(1)[1:9]
 
     df = pd.DataFrame(data, columns=header)
 
@@ -231,25 +238,16 @@ if st.session_state["page"] == "tambah_data":
     else:
         st.warning("⚠️ Tidak ada data atau kolom tidak lengkap di spreadsheet.")
 
-    # --- Tombol Simpan ---
-    submit = st.button("💾 Simpan Data")
-
+    # === SIMPAN DATA (setelah submit) ===
     if submit:
-        # Dapatkan jumlah baris terakhir
         next_row = len(sheet_data.get_all_values()) + 1
-
-        # Simpan ke kolom B–H
         sheet_data.update(
             f"B{next_row}:H{next_row}",
             [[str(tanggal), kategori, kasir, uraian, umk, spj, keterangan]]
         )
-
         st.success("✅ Data berhasil disimpan ke Spreadsheet!")
-
-       
-
-        # Optional biar langsung kelihatan perubahan tanpa reload
         st.rerun()
+
 
 
     # --- Logout ---
